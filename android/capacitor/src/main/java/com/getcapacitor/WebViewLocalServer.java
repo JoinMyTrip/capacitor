@@ -49,6 +49,7 @@ public class WebViewLocalServer {
     private static final String capacitorFileStart = Bridge.CAPACITOR_FILE_START;
     private static final String capacitorContentStart = Bridge.CAPACITOR_CONTENT_START;
     private String basePath;
+    private String language;
 
     private final UriMatcher uriMatcher;
     private final AndroidProtocolHandler protocolHandler;
@@ -454,6 +455,10 @@ public class WebViewLocalServer {
         createHostingDetails();
     }
 
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
     /**
      * Hosts the application's files on an https:// URL. Files from the basePath
      * <code>basePath/...</code> will be available under
@@ -492,6 +497,7 @@ public class WebViewLocalServer {
                     ignoreAssetPath = processedRoute.isIgnoreAssetPath();
                 }
 
+                Logger.debug("Handling request with path '" + path + "'. configured language is: " + language);
                 try {
                     if (path.startsWith(capacitorContentStart)) {
                         stream = protocolHandler.openContentUrl(url);
@@ -505,6 +511,8 @@ public class WebViewLocalServer {
                         stream = protocolHandler.openFile(path);
                     } else if (ignoreAssetPath) {
                         stream = protocolHandler.openAsset(path);
+                    } else if (language != null && !path.startsWith("/assets/")) {
+                        stream = protocolHandler.openAsset(assetPath + "/" + language + path);
                     } else {
                         stream = protocolHandler.openAsset(assetPath + path);
                     }
