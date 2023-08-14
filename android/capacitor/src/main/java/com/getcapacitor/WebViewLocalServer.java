@@ -261,9 +261,10 @@ public class WebViewLocalServer {
         if (path.equals("/") || (!request.getUrl().getLastPathSegment().contains(".") && html5mode)) {
             InputStream responseStream;
             try {
-                String startPath = this.basePath + "/index.html";
+                String languagePrefix = this.language != null ? "/" + this.language : "";
+                String startPath = this.basePath + languagePrefix + "/index.html";
                 if (bridge.getRouteProcessor() != null) {
-                    ProcessedRoute processedRoute = bridge.getRouteProcessor().process(this.basePath, "/index.html");
+                    ProcessedRoute processedRoute = bridge.getRouteProcessor().process(this.basePath + languagePrefix, "/index.html");
                     startPath = processedRoute.getPath();
                     isAsset = processedRoute.isAsset();
                 }
