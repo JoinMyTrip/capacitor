@@ -54,6 +54,7 @@ public class WebViewLocalServer {
     private static final String capacitorFileStart = Bridge.CAPACITOR_FILE_START;
     private static final String capacitorContentStart = Bridge.CAPACITOR_CONTENT_START;
     private String basePath;
+    private String language;
 
     private final UriMatcher uriMatcher;
     private final AndroidProtocolHandler protocolHandler;
@@ -375,9 +376,10 @@ public class WebViewLocalServer {
         if (path.equals("/") || (!request.getUrl().getLastPathSegment().contains(".") && html5mode)) {
             InputStream responseStream;
             try {
-                String startPath = this.basePath + "/index.html";
+                String languagePrefix = this.language != null ? "/" + this.language : "";
+                String startPath = this.basePath + languagePrefix + "/index.html";
                 if (bridge.getRouteProcessor() != null) {
-                    ProcessedRoute processedRoute = bridge.getRouteProcessor().process(this.basePath, "/index.html");
+                    ProcessedRoute processedRoute = bridge.getRouteProcessor().process(this.basePath + languagePrefix, "/index.html");
                     startPath = processedRoute.getPath();
                     isAsset = processedRoute.isAsset();
                 }
@@ -603,6 +605,10 @@ public class WebViewLocalServer {
         createHostingDetails();
     }
 
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
     private void createHostingDetails() {
         final String assetPath = this.basePath;
 
@@ -626,6 +632,7 @@ public class WebViewLocalServer {
                     ignoreAssetPath = processedRoute.isIgnoreAssetPath();
                 }
 
+                Logger.debug("Handling request with path '" + path + "'. configured language is: " + language);
                 try {
                     if (path.startsWith(capacitorContentStart)) {
                         stream = protocolHandler.openContentUrl(url);
@@ -639,6 +646,8 @@ public class WebViewLocalServer {
                         stream = protocolHandler.openFile(path);
                     } else if (ignoreAssetPath) {
                         stream = protocolHandler.openAsset(path);
+                    } else if (language != null && !path.startsWith("/assets/")) {
+                        stream = protocolHandler.openAsset(assetPath + "/" + language + path);
                     } else {
                         stream = protocolHandler.openAsset(assetPath + path);
                     }

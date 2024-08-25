@@ -11,10 +11,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
+import android.os.*;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -40,15 +37,7 @@ import com.getcapacitor.util.WebColor;
 import java.io.File;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.cordova.ConfigXmlParser;
@@ -253,7 +242,32 @@ public class Bridge {
         return app;
     }
 
+    private String getLanguage(String[] supportedLanguages, String defaultLanguage) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            LocaleList list = getContext().getResources().getConfiguration().getLocales();
+            for (int i = 0; i < list.size(); i++) {
+                Locale locale = list.get(i);
+                for (String language : supportedLanguages) {
+                    if (locale.getLanguage().equals(new Locale(language).getLanguage())) {
+                        return language;
+                    }
+                }
+            }
+        } else {
+            Locale locale = getContext().getResources().getConfiguration().locale;
+            for (String language : supportedLanguages) {
+                if (locale.getLanguage().equals(new Locale(language).getLanguage())) {
+                    return language;
+                }
+            }
+        }
+        return defaultLanguage;
+    }
+
     private void loadWebView() {
+        String language = getLanguage(new String[]{ "de", "en" }, "en"); // TODO: extract to config
+        Logger.debug("Detected and using language " + language);
+
         final boolean html5mode = this.config.isHTML5Mode();
 
         // Start the local web server
@@ -269,6 +283,7 @@ public class Bridge {
         }
         localServer = new WebViewLocalServer(context, this, injector, authorities, html5mode);
         localServer.hostAssets(DEFAULT_WEB_ASSET_DIR);
+        localServer.setLanguage(language);
 
         Logger.debug("Loading app at " + appUrl);
 
